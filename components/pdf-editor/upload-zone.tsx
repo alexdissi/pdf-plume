@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { Button } from "@/components/ui/button"
 
 type UploadZoneProps = {
   onFileLoaded: (data: ArrayBuffer, fileName: string) => void
