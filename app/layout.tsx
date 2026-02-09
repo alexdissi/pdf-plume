@@ -12,9 +12,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { getSiteUrl } from "@/lib/site";
+
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  title: "PDF Editor",
-  description: "Edit PDFs directly in your browser. Add text, draw, highlight, and annotate.",
+  metadataBase: siteUrl,
+  title: {
+    default: "PDF Plume — PDF editor in your browser",
+    template: "%s — PDF Plume",
+  },
+  description:
+    "Edit PDFs directly in your browser. Add text, draw, highlight, and annotate.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: "PDF Plume — PDF editor in your browser",
+    description:
+      "Edit PDFs directly in your browser. Add text, draw, highlight, and annotate.",
+    siteName: "PDF Plume",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PDF Plume — PDF editor in your browser",
+    description:
+      "Edit PDFs directly in your browser. Add text, draw, highlight, and annotate.",
+  },
 };
 
 export default function RootLayout({
