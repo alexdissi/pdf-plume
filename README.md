@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plume
+
+A fast, private PDF editor that runs entirely in your browser. Edit existing text, add annotations, draw, highlight — then export a clean PDF. No uploads, no servers, no accounts.
+
+**[plume.dissi.fr](https://plume.dissi.fr)**
+
+## Features
+
+- **Edit existing text** — Click any text in your PDF to modify it with live preview
+- **Text formatting** — Change font size, weight, style, color, and family (Sans / Serif / Mono)
+- **Add text blocks** — Place new text anywhere on the page, drag to reposition
+- **Draw & annotate** — Freehand drawing with adjustable stroke width and color
+- **Highlight** — Semi-transparent highlighter tool
+- **Eraser** — Remove drawings and annotations
+- **Zoom** — 50% to 300% zoom with sharp rendering
+- **Multi-page** — Full support for multi-page documents
+- **Instant export** — Download your edited PDF in one click
+
+## Privacy
+
+Plume processes everything client-side. Your files never leave your browser — no data is sent to any server.
+
+## Tech Stack
+
+- [Next.js](https://nextjs.org) 16 with Turbopack
+- [React](https://react.dev) 19
+- [Tailwind CSS](https://tailwindcss.com) v4
+- [shadcn/ui](https://ui.shadcn.com)
+- [pdf.js](https://mozilla.github.io/pdf.js/) for rendering
+- [pdf-lib](https://pdf-lib.js.org/) for PDF manipulation
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000) to start editing.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## License
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
