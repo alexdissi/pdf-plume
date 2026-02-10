@@ -334,6 +334,9 @@ export function TextLayer({
           fontWeight: item.mergedBold ? 700 : 400,
           fontStyle: item.mergedItalic ? "italic" : "normal",
           color: item.mergedColor,
+          // Without a background, the original PDF text (canvas) remains visible underneath,
+          // which looks like a double-render. Cover it only when we render an overlay.
+          backgroundColor: item.editedStr !== null || item.styleEdits !== null ? "rgba(255,255,255,0.98)" : "transparent",
         }
 
         return (
@@ -356,16 +359,17 @@ export function TextLayer({
                 onChange={(e) => onUpdateText(item.id, e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="h-full w-full border-none bg-transparent px-0 outline-none ring-2 ring-blue-500 rounded-sm"
+                className="h-full w-full border-none px-0 outline-none ring-2 ring-blue-500 rounded-sm"
                 style={{
                   ...fontStyles,
+                  backgroundColor: "rgba(255,255,255,0.98)",
                   minWidth: item.screenWidth,
                 }}
               />
             ) : isSelected ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-transparent ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
+                className={`h-full whitespace-nowrap ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
                 style={fontStyles}
               >
                 {displayStr}
@@ -373,7 +377,7 @@ export function TextLayer({
             ) : hasEdits ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-transparent ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
+                className={`h-full whitespace-nowrap ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
                 style={fontStyles}
               >
                 {displayStr}
