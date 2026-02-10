@@ -30,6 +30,90 @@ type ScreenItem = ExtractedText & {
   mergedFontFamily: string
 }
 
+type PdfJsTextItemLike = {
+  str: string
+  transform: number[]
+  fontName: string
+  width: number
+  height: number
+}
+
+function isPdfJsTextItemLike(value: unknown): value is PdfJsTextItemLike {
+  if (!value || typeof value !== "object") return false
+  const v = value as Record<string, unknown>
+  return (
+    typeof v.str === "string" &&
+    Array.isArray(v.transform) &&
+    typeof v.fontName === "string" &&
+    typeof v.width === "number" &&
+    typeof v.height === "number"
+  )
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+  const toHex = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function isNearWhite(r: number, g: number, b: number, threshold = 245) {
+  return r >= threshold && g >= threshold && b >= threshold
+}
+
+async function sampleTextColor(
+  page: PDFPageProxy,
+  items: Array<{ x: number; y: number; fontSize: number }>,
+  scale: number
+): Promise<string[]> {
+  // Render the page once and sample around each text position to approximate the fill color.
+  const viewport = page.getViewport({ scale })
+  const canvas = document.createElement("canvas")
+  canvas.width = Math.ceil(viewport.width)
+  canvas.height = Math.ceil(viewport.height)
+
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })
+  if (!ctx) return items.map(() => "#000000")
+
+  // pdfjs render() types differ by version; include both canvas and canvasContext.
+  const renderParams = { canvas, canvasContext: ctx, viewport } as unknown as Parameters<
+    PDFPageProxy["render"]
+  >[0]
+  await page.render(renderParams).promise
+
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+  const getPixel = (px: number, py: number) => {
+    if (px < 0 || py < 0 || px >= width || py >= height) return null
+    const i = (py * width + px) * 4
+    return [data[i], data[i + 1], data[i + 2], data[i + 3]] as const
+  }
+
+  const colors: string[] = []
+  for (const it of items) {
+    const [sx, sy] = viewport.convertToViewportPoint(it.x, it.y)
+    // Sample slightly above baseline and around the glyph area.
+    const cx = Math.round(sx)
+    const cy = Math.round(sy - it.fontSize * scale * 0.65)
+
+    let best: { r: number; g: number; b: number } | null = null
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const p = getPixel(cx + dx, cy + dy)
+        if (!p) continue
+        const [r, g, b, a] = p
+        if (a < 50) continue
+        if (isNearWhite(r, g, b)) continue
+        best = { r, g, b }
+        break
+      }
+      if (best) break
+    }
+
+    colors.push(best ? rgbToHex(best.r, best.g, best.b) : "#000000")
+  }
+
+  return colors
+}
+
 function getFontData(
   page: PDFPageProxy,
   fontName: string
@@ -92,14 +176,33 @@ export function TextLayer({
       const styles = content.styles as Record<string, { fontFamily: string }>
       const texts: ExtractedText[] = []
 
-      for (const item of content.items) {
-        if (!("str" in item) || !item.str.trim()) continue
+      // Precompute color samples (best-effort).
+      const sampleInputs: Array<{ x: number; y: number; fontSize: number }> = []
+      const candidates: Array<{ item: unknown; transform: number[]; fontSize: number }> = []
+
+      // pdfjs-dist types for TextItem vary a bit, so we treat items as unknown and narrow the fields we need.
+      for (const item of content.items as unknown[]) {
+        if (!isPdfJsTextItemLike(item)) continue
+        if (!item.str.trim()) continue
 
         const t = item.transform
         const fontSize = Math.hypot(t[0], t[1])
+        candidates.push({ item, transform: t, fontSize })
+        sampleInputs.push({ x: t[4], y: t[5], fontSize })
+      }
+
+      let sampledColors: string[] = []
+      try {
+        sampledColors = await sampleTextColor(page, sampleInputs, 2)
+      } catch {
+        sampledColors = sampleInputs.map(() => "#000000")
+      }
+
+      for (let i = 0; i < candidates.length; i++) {
+        const { item, transform: t, fontSize } = candidates[i]
+        if (!isPdfJsTextItemLike(item)) continue
         const styleInfo = styles[item.fontName]
         const cssFontFamily = styleInfo?.fontFamily || "sans-serif"
-
         const fontData = await getFontData(page, item.fontName)
 
         texts.push({
@@ -116,7 +219,7 @@ export function TextLayer({
           cssFontFamily,
           isBold: fontData.bold,
           isItalic: fontData.italic,
-          color: "#000000",
+          color: sampledColors[i] ?? "#000000",
           transform: t,
           styleEdits: null,
         })
