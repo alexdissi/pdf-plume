@@ -6,7 +6,7 @@ export function websiteJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "PDF Plume",
+    name: "Plume",
     url: siteUrl,
   };
 }
@@ -17,7 +17,7 @@ export function softwareAppJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "PDF Plume",
+    name: "Plume",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: siteUrl,
