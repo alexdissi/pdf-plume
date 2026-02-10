@@ -94,21 +94,39 @@ async function sampleTextColor(
     const cx = Math.round(sx)
     const cy = Math.round(sy - it.fontSize * scale * 0.65)
 
-    let best: { r: number; g: number; b: number } | null = null
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dx = -2; dx <= 2; dx++) {
+    // Collect a small neighborhood and pick a weighted average of non-white pixels.
+    let sumR = 0
+    let sumG = 0
+    let sumB = 0
+    let sumW = 0
+
+    const radius = 6
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
         const p = getPixel(cx + dx, cy + dy)
         if (!p) continue
         const [r, g, b, a] = p
-        if (a < 50) continue
-        if (isNearWhite(r, g, b)) continue
-        best = { r, g, b }
-        break
+        if (a < 40) continue
+        if (isNearWhite(r, g, b, 250)) continue
+
+        // Weight by alpha and saturation to bias towards "ink" rather than antialiasing.
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
+        const sat = max === 0 ? 0 : (max - min) / max
+        const w = (a / 255) * (0.35 + sat)
+
+        sumR += r * w
+        sumG += g * w
+        sumB += b * w
+        sumW += w
       }
-      if (best) break
     }
 
-    colors.push(best ? rgbToHex(best.r, best.g, best.b) : "#000000")
+    if (sumW > 0.001) {
+      colors.push(rgbToHex(sumR / sumW, sumG / sumW, sumB / sumW))
+    } else {
+      colors.push("#000000")
+    }
   }
 
   return colors
@@ -281,7 +299,8 @@ export function TextLayer({
 
   const handleBlur = useCallback(() => {
     setEditingId(null)
-  }, [])
+    onSelectExtractedText(null)
+  }, [onSelectExtractedText])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -292,6 +311,7 @@ export function TextLayer({
       } else if (e.key === "Enter") {
         e.preventDefault()
         setEditingId(null)
+        onSelectExtractedText(null)
       }
     },
     [onSelectExtractedText]
