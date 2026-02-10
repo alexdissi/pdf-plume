@@ -356,7 +356,7 @@ export function TextLayer({
                 onChange={(e) => onUpdateText(item.id, e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="h-full w-full border-none bg-white px-0 outline-none ring-2 ring-blue-500 rounded-sm"
+                className="h-full w-full border-none bg-transparent px-0 outline-none ring-2 ring-blue-500 rounded-sm"
                 style={{
                   ...fontStyles,
                   minWidth: item.screenWidth,
@@ -365,7 +365,7 @@ export function TextLayer({
             ) : isSelected ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-white ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
+                className={`h-full whitespace-nowrap bg-transparent ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
                 style={fontStyles}
               >
                 {displayStr}
@@ -373,7 +373,7 @@ export function TextLayer({
             ) : hasEdits ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-white ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
+                className={`h-full whitespace-nowrap bg-transparent ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
                 style={fontStyles}
               >
                 {displayStr}
