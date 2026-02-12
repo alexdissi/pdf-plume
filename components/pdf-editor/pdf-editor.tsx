@@ -28,7 +28,7 @@ export function PdfEditor() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Toolbar />
       <PdfViewer />
     </div>

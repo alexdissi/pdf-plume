@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, type ReactNode } from "react"
+import { useState, useMemo, useEffect, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -28,12 +28,21 @@ const FONT_FAMILIES = [
   { label: "Mono", css: "Courier New, Courier, monospace" },
 ]
 
-function Tip({ children, label }: { children: ReactNode; label: string }) {
+const TOOL_SHORTCUTS: Record<Tool, string> = {
+  select: "V",
+  text: "T",
+  draw: "D",
+  highlight: "H",
+  eraser: "E",
+}
+
+function Tip({ children, label, shortcut }: { children: ReactNode; label: string; shortcut?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={8}>
-        {label}
+      <TooltipContent side="bottom" sideOffset={8} className="flex items-center gap-2">
+        <span>{label}</span>
+        {shortcut && <kbd className="kbd">{shortcut}</kbd>}
       </TooltipContent>
     </Tooltip>
   )
@@ -49,6 +58,22 @@ function detectFontFamilyLabel(css: string): string {
 export function Toolbar() {
   const { state, dispatch, drawingCanvasRefs } = useEditor()
   const [isExporting, setIsExporting] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement)?.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const key = e.key.toUpperCase()
+      const toolMap: Record<string, Tool> = { V: "select", T: "text", D: "draw", H: "highlight", E: "eraser" }
+      if (toolMap[key]) {
+        e.preventDefault()
+        dispatch({ type: "SET_TOOL", tool: toolMap[key] })
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [dispatch])
 
   const selectedText = useMemo(() => {
     if (!state.selectedExtractedTextId) return null
@@ -102,10 +127,12 @@ export function Toolbar() {
     state.drawings.length
 
   return (
-    <div className="shrink-0">
-      <div className="flex h-12 items-center justify-between border-b border-border/60 bg-background/80 backdrop-blur-sm px-2.5 gap-2">
+    <div className="shrink-0 animate-slide-down">
+      {/* Main toolbar */}
+      <div className="flex h-12 items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-xl px-3 gap-2">
+        {/* Left: file info */}
         <div className="flex items-center gap-1.5 min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0 rounded-md bg-muted/50 px-2.5 py-1">
+          <div className="flex items-center gap-2 min-w-0 rounded-lg bg-muted/40 px-2.5 py-1.5 transition-colors hover:bg-muted/60">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
@@ -114,11 +141,12 @@ export function Toolbar() {
               {state.fileName}
             </span>
           </div>
-          <Tip label="Open new file">
+          <Tip label="Open new file" shortcut="&#8984;O">
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={() => dispatch({ type: "RESET" })}
+              className="rounded-lg hover:bg-muted/60"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14" />
@@ -128,22 +156,23 @@ export function Toolbar() {
           </Tip>
         </div>
 
-        <div className="flex items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 p-0.5">
+        {/* Center: tools */}
+        <div className="flex items-center gap-0.5 rounded-xl border border-border/40 bg-muted/25 p-0.5 shadow-sm">
           <ToggleGroup
             type="single"
             value={state.currentTool}
             onValueChange={(v) => { if (v) dispatch({ type: "SET_TOOL", tool: v as Tool }) }}
             size="sm"
           >
-            <Tip label="Select & Edit">
-              <ToggleGroupItem value="select" aria-label="Select" className="rounded-md">
+            <Tip label="Select & Edit" shortcut={TOOL_SHORTCUTS.select}>
+              <ToggleGroupItem value="select" aria-label="Select" className="rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:shadow-sm transition-all duration-150">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51z" />
                 </svg>
               </ToggleGroupItem>
             </Tip>
-            <Tip label="Add Text">
-              <ToggleGroupItem value="text" aria-label="Text" className="rounded-md">
+            <Tip label="Add Text" shortcut={TOOL_SHORTCUTS.text}>
+              <ToggleGroupItem value="text" aria-label="Text" className="rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:shadow-sm transition-all duration-150">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="4 7 4 4 20 4 20 7" />
                   <line x1="9" y1="20" x2="15" y2="20" />
@@ -151,23 +180,23 @@ export function Toolbar() {
                 </svg>
               </ToggleGroupItem>
             </Tip>
-            <Tip label="Draw">
-              <ToggleGroupItem value="draw" aria-label="Draw" className="rounded-md">
+            <Tip label="Draw" shortcut={TOOL_SHORTCUTS.draw}>
+              <ToggleGroupItem value="draw" aria-label="Draw" className="rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:shadow-sm transition-all duration-150">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
                 </svg>
               </ToggleGroupItem>
             </Tip>
-            <Tip label="Highlight">
-              <ToggleGroupItem value="highlight" aria-label="Highlight" className="rounded-md">
+            <Tip label="Highlight" shortcut={TOOL_SHORTCUTS.highlight}>
+              <ToggleGroupItem value="highlight" aria-label="Highlight" className="rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:shadow-sm transition-all duration-150">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
                   <path d="M16.38 3.29a2.4 2.4 0 0 1 3.4.01l.93.94a2.4 2.4 0 0 1 .01 3.4L10.42 18H6v-4.42z" />
                 </svg>
               </ToggleGroupItem>
             </Tip>
-            <Tip label="Eraser">
-              <ToggleGroupItem value="eraser" aria-label="Eraser" className="rounded-md">
+            <Tip label="Eraser" shortcut={TOOL_SHORTCUTS.eraser}>
+              <ToggleGroupItem value="eraser" aria-label="Eraser" className="rounded-lg data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:shadow-sm transition-all duration-150">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 20H7L3 16a1 1 0 0 1 0-1.41l9.59-9.59a2 2 0 0 1 2.82 0l5.17 5.17a2 2 0 0 1 0 2.82L14 20" />
                   <path d="M6 11.5l6.5 6.5" />
@@ -177,27 +206,28 @@ export function Toolbar() {
           </ToggleGroup>
         </div>
 
+        {/* Right: settings + export */}
         <div className="flex items-center gap-0.5">
           <Popover>
             <Tip label="Color">
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon-sm" aria-label="Color picker">
+                <Button variant="ghost" size="icon-sm" aria-label="Color picker" className="rounded-lg hover:bg-muted/60">
                   <span
-                    className="block size-4 rounded-full border border-border/80 shadow-sm transition-transform hover:scale-110"
+                    className="block size-4 rounded-full border border-border/80 shadow-sm ring-2 ring-background transition-transform hover:scale-110"
                     style={{ backgroundColor: state.color }}
                   />
                 </Button>
               </PopoverTrigger>
             </Tip>
-            <PopoverContent className="w-48 p-3" align="end">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Color</p>
-              <div className="grid grid-cols-4 gap-1.5">
+            <PopoverContent className="w-52 p-3 rounded-xl" align="end">
+              <p className="mb-2.5 text-xs font-medium text-muted-foreground">Color</p>
+              <div className="grid grid-cols-4 gap-2">
                 {COLOR_PRESETS.map((c) => (
                   <button
                     key={c}
                     onClick={() => dispatch({ type: "SET_COLOR", color: c })}
-                    className={`flex size-8 items-center justify-center rounded-lg border transition-all hover:scale-105 ${
-                      state.color === c ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-border/60 hover:border-border"
+                    className={`flex size-9 items-center justify-center rounded-xl border transition-all duration-150 hover:scale-105 active:scale-95 ${
+                      state.color === c ? "ring-2 ring-primary ring-offset-2 border-transparent" : "border-border/60 hover:border-border"
                     }`}
                     style={{ backgroundColor: c }}
                   >
@@ -209,10 +239,10 @@ export function Toolbar() {
                   </button>
                 ))}
               </div>
-              <div className="mt-2.5 flex items-center gap-2">
-                <label className="flex h-8 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-border/60 px-2 text-xs transition-colors hover:border-border">
+              <div className="mt-3 flex items-center gap-2">
+                <label className="flex h-9 flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 px-2.5 text-xs transition-colors hover:border-border hover:bg-muted/30">
                   <span
-                    className="block size-3.5 shrink-0 rounded-full border border-border/60"
+                    className="block size-4 shrink-0 rounded-full border border-border/60"
                     style={{ backgroundColor: state.color }}
                   />
                   <span className="flex-1 font-mono uppercase text-muted-foreground">
@@ -232,7 +262,7 @@ export function Toolbar() {
           <Popover>
             <Tip label="Font size">
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="tabular-nums text-xs font-mono gap-1 px-2 h-7">
+                <Button variant="ghost" size="sm" className="tabular-nums text-xs font-mono gap-1 px-2 h-7 rounded-lg hover:bg-muted/60">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="4 7 4 4 20 4 20 7" />
                     <line x1="9" y1="20" x2="15" y2="20" />
@@ -242,7 +272,7 @@ export function Toolbar() {
                 </Button>
               </PopoverTrigger>
             </Tip>
-            <PopoverContent className="w-52 p-3" align="end">
+            <PopoverContent className="w-52 p-3 rounded-xl" align="end">
               <p className="mb-3 text-xs font-medium text-muted-foreground">Font size</p>
               <div className="flex items-center gap-3">
                 <Slider
@@ -262,7 +292,7 @@ export function Toolbar() {
           <Popover>
             <Tip label="Stroke width">
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="tabular-nums text-xs font-mono gap-1 px-2 h-7">
+                <Button variant="ghost" size="sm" className="tabular-nums text-xs font-mono gap-1 px-2 h-7 rounded-lg hover:bg-muted/60">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="1" />
                     <path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5z" />
@@ -271,7 +301,7 @@ export function Toolbar() {
                 </Button>
               </PopoverTrigger>
             </Tip>
-            <PopoverContent className="w-52 p-3" align="end">
+            <PopoverContent className="w-52 p-3 rounded-xl" align="end">
               <p className="mb-3 text-xs font-medium text-muted-foreground">Stroke width</p>
               <div className="flex items-center gap-3">
                 <Slider
@@ -288,22 +318,23 @@ export function Toolbar() {
             </PopoverContent>
           </Popover>
 
-          <Separator orientation="vertical" className="mx-0.5 h-4" />
+          <Separator orientation="vertical" className="mx-1 h-4" />
 
-          <div className="flex items-center gap-0">
+          <div className="flex items-center gap-0 rounded-lg border border-border/40 bg-muted/20 p-0.5">
             <Tip label="Zoom out">
               <Button
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => setZoom(-0.25)}
                 disabled={state.zoom <= 0.5}
+                className="rounded-md"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </Button>
             </Tip>
-            <span className="w-9 text-center font-mono text-[11px] tabular-nums text-muted-foreground select-none">
+            <span className="w-10 text-center font-mono text-[11px] tabular-nums text-muted-foreground select-none">
               {Math.round(state.zoom * 100)}%
             </span>
             <Tip label="Zoom in">
@@ -312,6 +343,7 @@ export function Toolbar() {
                 size="icon-xs"
                 onClick={() => setZoom(0.25)}
                 disabled={state.zoom >= 3}
+                className="rounded-md"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -321,14 +353,14 @@ export function Toolbar() {
             </Tip>
           </div>
 
-          <Separator orientation="vertical" className="mx-0.5 h-4" />
+          <Separator orientation="vertical" className="mx-1 h-4" />
 
-          <Tip label="Download edited PDF">
+          <Tip label="Download edited PDF" shortcut="&#8984;S">
             <Button
               size="sm"
               onClick={handleDownload}
               disabled={isExporting || !state.pdfData}
-              className="gap-1.5 h-7 text-xs rounded-lg"
+              className="gap-1.5 h-7 text-xs rounded-lg shadow-sm transition-all duration-150 hover:shadow-md active:scale-[0.97]"
             >
               {isExporting ? (
                 <svg className="size-3 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -344,7 +376,7 @@ export function Toolbar() {
               )}
               Export
               {editCount > 0 && (
-                <span className="flex size-4 items-center justify-center rounded-full bg-primary-foreground/20 text-[9px] font-bold">
+                <span className="flex size-4 items-center justify-center rounded-full bg-primary-foreground/20 text-[9px] font-bold leading-none">
                   {editCount}
                 </span>
               )}
@@ -353,36 +385,38 @@ export function Toolbar() {
         </div>
       </div>
 
+      {/* Format bar for selected text */}
       {selectedText && mergedStyle && (
-        <div className="flex h-10 items-center gap-1 border-b border-border/40 bg-muted/20 px-3">
-          <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider mr-1.5">Format</span>
+        <div className="flex h-10 items-center gap-1 border-b border-border/40 bg-muted/15 backdrop-blur-sm px-3 animate-slide-down">
+          <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-widest mr-2">Format</span>
 
-          <Tip label="Bold">
+          <Tip label="Bold" shortcut="&#8984;B">
             <Button
               variant={mergedStyle.isBold ? "default" : "ghost"}
               size="icon-xs"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => updateStyle({ isBold: !mergedStyle.isBold })}
-              className={mergedStyle.isBold ? "font-bold" : ""}
+              className={`rounded-md ${mergedStyle.isBold ? "shadow-sm" : ""}`}
             >
               <span className="text-xs font-bold">B</span>
             </Button>
           </Tip>
 
-          <Tip label="Italic">
+          <Tip label="Italic" shortcut="&#8984;I">
             <Button
               variant={mergedStyle.isItalic ? "default" : "ghost"}
               size="icon-xs"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => updateStyle({ isItalic: !mergedStyle.isItalic })}
+              className={`rounded-md ${mergedStyle.isItalic ? "shadow-sm" : ""}`}
             >
               <span className="text-xs italic font-serif">I</span>
             </Button>
           </Tip>
 
-          <Separator orientation="vertical" className="mx-1 h-4" />
+          <Separator orientation="vertical" className="mx-1.5 h-4" />
 
-          <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-background p-0.5">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-background/60 p-0.5">
             {FONT_FAMILIES.map((f) => {
               const isActive = detectFontFamilyLabel(mergedStyle.cssFontFamily) === f.label
               return (
@@ -390,10 +424,10 @@ export function Toolbar() {
                   key={f.label}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => updateStyle({ cssFontFamily: f.css })}
-                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-foreground text-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                   style={{ fontFamily: f.css }}
                 >
@@ -403,7 +437,7 @@ export function Toolbar() {
             })}
           </div>
 
-          <Separator orientation="vertical" className="mx-1 h-4" />
+          <Separator orientation="vertical" className="mx-1.5 h-4" />
 
           <div className="flex items-center gap-0">
             <Tip label="Decrease size">
@@ -412,6 +446,7 @@ export function Toolbar() {
                 size="icon-xs"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => updateStyle({ fontSize: Math.max(4, Math.round(mergedStyle.fontSize) - 1) })}
+                className="rounded-md"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                   <line x1="5" y1="12" x2="19" y2="12" />
@@ -427,6 +462,7 @@ export function Toolbar() {
                 size="icon-xs"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => updateStyle({ fontSize: Math.min(200, Math.round(mergedStyle.fontSize) + 1) })}
+                className="rounded-md"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -436,7 +472,7 @@ export function Toolbar() {
             </Tip>
           </div>
 
-          <Separator orientation="vertical" className="mx-1 h-4" />
+          <Separator orientation="vertical" className="mx-1.5 h-4" />
 
           <Popover>
             <Tip label="Text color">
@@ -445,6 +481,7 @@ export function Toolbar() {
                   variant="ghost"
                   size="icon-xs"
                   onMouseDown={(e) => e.preventDefault()}
+                  className="rounded-md"
                 >
                   <span
                     className="block size-3.5 rounded-full border border-border/80 shadow-sm"
@@ -453,16 +490,16 @@ export function Toolbar() {
                 </Button>
               </PopoverTrigger>
             </Tip>
-            <PopoverContent className="w-48 p-3" align="start">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Text color</p>
-              <div className="grid grid-cols-4 gap-1.5">
+            <PopoverContent className="w-52 p-3 rounded-xl" align="start">
+              <p className="mb-2.5 text-xs font-medium text-muted-foreground">Text color</p>
+              <div className="grid grid-cols-4 gap-2">
                 {COLOR_PRESETS.map((c) => (
                   <button
                     key={c}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => updateStyle({ color: c })}
-                    className={`flex size-8 items-center justify-center rounded-lg border transition-all hover:scale-105 ${
-                      mergedStyle.color === c ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-border/60 hover:border-border"
+                    className={`flex size-9 items-center justify-center rounded-xl border transition-all duration-150 hover:scale-105 active:scale-95 ${
+                      mergedStyle.color === c ? "ring-2 ring-primary ring-offset-2 border-transparent" : "border-border/60 hover:border-border"
                     }`}
                     style={{ backgroundColor: c }}
                   >
@@ -474,10 +511,10 @@ export function Toolbar() {
                   </button>
                 ))}
               </div>
-              <div className="mt-2.5">
-                <label className="flex h-8 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-border/60 px-2 text-xs transition-colors hover:border-border">
+              <div className="mt-3">
+                <label className="flex h-9 flex-1 cursor-pointer items-center gap-2 rounded-xl border border-border/60 px-2.5 text-xs transition-colors hover:border-border hover:bg-muted/30">
                   <span
-                    className="block size-3.5 shrink-0 rounded-full border border-border/60"
+                    className="block size-4 shrink-0 rounded-full border border-border/60"
                     style={{ backgroundColor: mergedStyle.color }}
                   />
                   <span className="flex-1 font-mono uppercase text-muted-foreground">

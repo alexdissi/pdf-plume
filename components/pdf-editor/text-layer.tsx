@@ -233,25 +233,40 @@ export function TextLayer({
                 onChange={(e) => onUpdateText(item.id, e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="h-full w-full border-none bg-white px-0 outline-none ring-2 ring-blue-500 rounded-sm"
+                className="border-none bg-white outline-none ring-2 ring-blue-500 rounded-sm"
                 style={{
                   ...fontStyles,
-                  minWidth: item.screenWidth,
+                  minWidth: item.screenWidth + 4,
+                  height: item.screenHeight + 4,
+                  margin: "-2px 0 0 -2px",
+                  padding: "2px",
                 }}
               />
             ) : isSelected ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-white ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
-                style={fontStyles}
+                className={`whitespace-nowrap bg-white ring-2 ring-blue-500/60 rounded-sm ${isInteractive ? "cursor-text" : ""}`}
+                style={{
+                  ...fontStyles,
+                  minWidth: item.screenWidth + 4,
+                  height: item.screenHeight + 4,
+                  margin: "-2px 0 0 -2px",
+                  padding: "2px",
+                }}
               >
                 {displayStr}
               </div>
             ) : hasEdits ? (
               <div
                 onClick={(e) => handleClick(item.id, e)}
-                className={`h-full whitespace-nowrap bg-white ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
-                style={fontStyles}
+                className={`whitespace-nowrap bg-white ${isInteractive ? "cursor-text hover:ring-1 hover:ring-blue-500/40" : ""}`}
+                style={{
+                  ...fontStyles,
+                  minWidth: item.screenWidth + 4,
+                  height: item.screenHeight + 4,
+                  margin: "-2px 0 0 -2px",
+                  padding: "2px",
+                }}
               >
                 {displayStr}
               </div>

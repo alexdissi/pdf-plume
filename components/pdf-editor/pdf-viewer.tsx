@@ -78,23 +78,26 @@ export function PdfViewer() {
 
   if (!pdfDoc || pages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-muted/30">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
-          <p className="text-sm">Loading document...</p>
+      <div className="dot-grid flex flex-1 items-center justify-center bg-muted/20">
+        <div className="flex flex-col items-center gap-4 text-muted-foreground animate-fade-in">
+          <div className="relative flex h-10 w-10 items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-2 border-border" />
+            <div className="absolute inset-0 rounded-full border-2 border-foreground border-t-transparent animate-spin" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-medium">Loading document</p>
+            <p className="text-xs text-muted-foreground/60">Parsing pages...</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center overflow-auto bg-muted/30 py-8 px-4">
-      <div className="flex flex-col items-center gap-6">
+    <div className="dot-grid flex flex-1 flex-col items-center overflow-auto bg-muted/20 py-8 px-4">
+      <div className="flex flex-col items-center gap-8">
         {pages.map((page, i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
+          <div key={i} className="flex flex-col items-center gap-2.5 animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
             <PdfPage
               page={page}
               pageIndex={i}
@@ -116,6 +119,7 @@ export function PdfViewer() {
               }}
               onSelectTextBlock={setActiveTextBlockId}
               onAddDrawing={(drawing) => dispatch({ type: "ADD_DRAWING", drawing })}
+              onDeleteDrawing={(id) => dispatch({ type: "DELETE_DRAWING", id })}
               onTextsExtracted={handleTextsExtracted}
               onUpdateExtractedText={handleUpdateExtractedText}
               onSelectExtractedText={handleSelectExtractedText}
@@ -123,7 +127,7 @@ export function PdfViewer() {
               onRegisterCanvas={handleRegisterCanvas}
             />
             {pages.length > 1 && (
-              <span className="text-[11px] font-mono text-muted-foreground/60 select-none tabular-nums">
+              <span className="inline-flex items-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-mono text-muted-foreground/60 select-none tabular-nums shadow-sm">
                 {i + 1} / {pages.length}
               </span>
             )}
