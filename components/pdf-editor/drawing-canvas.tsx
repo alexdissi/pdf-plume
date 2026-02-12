@@ -13,6 +13,7 @@ type DrawingCanvasProps = {
   strokeWidth: number
   drawings: DrawingPath[]
   onAddDrawing: (drawing: DrawingPath) => void
+  onDeleteDrawing: (id: string) => void
   onRegisterCanvas: (pageIndex: number, canvas: HTMLCanvasElement) => void
 }
 
@@ -25,6 +26,7 @@ export function DrawingCanvas({
   strokeWidth,
   drawings,
   onAddDrawing,
+  onDeleteDrawing,
   onRegisterCanvas,
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -32,6 +34,8 @@ export function DrawingCanvas({
   const currentPathRef = useRef<{ x: number; y: number }[]>([])
 
   const isDrawTool = tool === "draw" || tool === "highlight"
+  const isEraser = tool === "eraser"
+  const isCanvasActive = isDrawTool || isEraser
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -78,18 +82,47 @@ export function DrawingCanvas({
     }
   }
 
+  const eraseAt = useCallback(
+    (point: { x: number; y: number }) => {
+      const threshold = 12
+      const pageDrawings = drawings.filter((d) => d.pageIndex === pageIndex)
+      for (const drawing of pageDrawings) {
+        for (const p of drawing.points) {
+          const dx = p.x - point.x
+          const dy = p.y - point.y
+          if (dx * dx + dy * dy < (threshold + drawing.width / 2) ** 2) {
+            onDeleteDrawing(drawing.id)
+            break
+          }
+        }
+      }
+    },
+    [drawings, pageIndex, onDeleteDrawing]
+  )
+
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isDrawTool) return
+    if (!isCanvasActive) return
     e.preventDefault()
     e.stopPropagation()
     isDrawingRef.current = true
-    currentPathRef.current = [getPoint(e)]
+    const point = getPoint(e)
+    if (isEraser) {
+      eraseAt(point)
+    } else {
+      currentPathRef.current = [point]
+    }
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDrawingRef.current || !isDrawTool) return
+    if (!isDrawingRef.current || !isCanvasActive) return
     e.preventDefault()
     const point = getPoint(e)
+
+    if (isEraser) {
+      eraseAt(point)
+      return
+    }
+
     currentPathRef.current.push(point)
 
     const canvas = canvasRef.current
@@ -119,6 +152,8 @@ export function DrawingCanvas({
     if (!isDrawingRef.current) return
     isDrawingRef.current = false
 
+    if (isEraser) return
+
     if (currentPathRef.current.length >= 2) {
       onAddDrawing({
         id: generateId(),
@@ -137,7 +172,7 @@ export function DrawingCanvas({
       ref={canvasRef}
       width={width}
       height={height}
-      className={`absolute inset-0 ${isDrawTool ? "cursor-crosshair z-20" : "pointer-events-none z-10"}`}
+      className={`absolute inset-0 ${isCanvasActive ? (isEraser ? "cursor-pointer" : "cursor-crosshair") + " z-20" : "pointer-events-none z-10"}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

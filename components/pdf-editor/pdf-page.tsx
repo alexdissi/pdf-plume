@@ -26,6 +26,7 @@ type PdfPageProps = {
   onDeleteTextBlock: (id: string) => void
   onSelectTextBlock: (id: string | null) => void
   onAddDrawing: (drawing: DrawingPath) => void
+  onDeleteDrawing: (id: string) => void
   onTextsExtracted: (texts: ExtractedText[]) => void
   onUpdateExtractedText: (id: string, editedStr: string) => void
   onSelectExtractedText: (id: string | null) => void
@@ -51,6 +52,7 @@ export function PdfPage({
   onDeleteTextBlock,
   onSelectTextBlock,
   onAddDrawing,
+  onDeleteDrawing,
   onTextsExtracted,
   onUpdateExtractedText,
   onSelectExtractedText,
@@ -119,7 +121,7 @@ export function PdfPage({
   const viewport = page.getViewport({ scale: 1.5 * zoom })
 
   return (
-    <div className="rounded-sm ring-1 ring-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="rounded-lg ring-1 ring-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]">
       <div
         className="relative bg-white"
         style={{ width: viewport.width, height: viewport.height }}
@@ -148,6 +150,7 @@ export function PdfPage({
           strokeWidth={strokeWidth}
           drawings={drawings}
           onAddDrawing={onAddDrawing}
+          onDeleteDrawing={onDeleteDrawing}
           onRegisterCanvas={onRegisterCanvas}
         />
 
