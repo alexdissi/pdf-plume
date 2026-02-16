@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect } from "react"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 type UploadZoneProps = {
   onFileLoaded: (data: ArrayBuffer, fileName: string) => void
@@ -55,7 +56,11 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
   }, [])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-lg text-center">
         {/* Logo */}
         <div className="mb-10 animate-slide-up">
