@@ -7,6 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Slider } from "@/components/ui/slider"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useEditor } from "@/lib/editor-context"
 import { compilePdf, downloadPdf } from "@/lib/pdf-utils"
 import type { Tool, ExtractedTextStyleEdits } from "@/lib/types"
@@ -319,6 +320,10 @@ export function Toolbar() {
           </Popover>
 
           <Separator orientation="vertical" className="mx-1 h-4" />
+
+          <Tip label="Toggle dark mode">
+            <ThemeToggle compact />
+          </Tip>
 
           <div className="flex items-center gap-0 rounded-lg border border-border/40 bg-muted/20 p-0.5">
             <Tip label="Zoom out">
