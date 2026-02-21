@@ -10,6 +10,7 @@ export function PdfViewer() {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [pages, setPages] = useState<PDFPageProxy[]>([])
   const [activeTextBlockId, setActiveTextBlockId] = useState<string | null>(null)
+  const [currentPageIndex, setCurrentPageIndex] = useState(0)
 
   useEffect(() => {
     if (!state.pdfData) return
@@ -34,6 +35,7 @@ export function PdfViewer() {
 
       setPdfDoc(doc)
       setPages(loadedPages)
+      setCurrentPageIndex(0)
       dispatch({ type: "SET_PDF", data: state.pdfData!, fileName: state.fileName, numPages: doc.numPages })
     }
 
@@ -93,46 +95,65 @@ export function PdfViewer() {
     )
   }
 
+  const page = pages[currentPageIndex]
+  const canGoPrev = currentPageIndex > 0
+  const canGoNext = currentPageIndex < pages.length - 1
+
   return (
     <div className="dot-grid flex flex-1 flex-col items-center overflow-auto bg-muted/20 py-8 px-4">
+      <div className="sticky top-4 z-10 mb-4 flex items-center gap-2 rounded-full border border-border/60 bg-background/90 px-2 py-1.5 shadow-sm backdrop-blur">
+        <button
+          type="button"
+          onClick={() => setCurrentPageIndex((p) => Math.max(0, p - 1))}
+          disabled={!canGoPrev}
+          className="rounded-full border border-border/60 px-3 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Previous
+        </button>
+        <span className="inline-flex min-w-20 items-center justify-center rounded-full border border-border/50 bg-muted/40 px-3 py-1 text-xs font-mono tabular-nums text-muted-foreground">
+          {currentPageIndex + 1} / {pages.length}
+        </span>
+        <button
+          type="button"
+          onClick={() => setCurrentPageIndex((p) => Math.min(pages.length - 1, p + 1))}
+          disabled={!canGoNext}
+          className="rounded-full border border-border/60 px-3 py-1 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+
       <div className="flex flex-col items-center gap-8">
-        {pages.map((page, i) => (
-          <div key={i} className="flex flex-col items-center gap-2.5 animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-            <PdfPage
-              page={page}
-              pageIndex={i}
-              zoom={state.zoom}
-              tool={state.currentTool}
-              color={state.color}
-              fontSize={state.fontSize}
-              strokeWidth={state.strokeWidth}
-              textBlocks={state.textBlocks}
-              drawings={state.drawings}
-              extractedTexts={state.extractedTexts}
-              activeTextBlockId={activeTextBlockId}
-              selectedExtractedTextId={state.selectedExtractedTextId}
-              onAddTextBlock={(block) => dispatch({ type: "ADD_TEXT_BLOCK", block })}
-              onUpdateTextBlock={(id, updates) => dispatch({ type: "UPDATE_TEXT_BLOCK", id, updates })}
-              onDeleteTextBlock={(id) => {
-                dispatch({ type: "DELETE_TEXT_BLOCK", id })
-                if (activeTextBlockId === id) setActiveTextBlockId(null)
-              }}
-              onSelectTextBlock={setActiveTextBlockId}
-              onAddDrawing={(drawing) => dispatch({ type: "ADD_DRAWING", drawing })}
-              onDeleteDrawing={(id) => dispatch({ type: "DELETE_DRAWING", id })}
-              onTextsExtracted={handleTextsExtracted}
-              onUpdateExtractedText={handleUpdateExtractedText}
-              onSelectExtractedText={handleSelectExtractedText}
-              onSetPageDimensions={handleSetPageDimensions}
-              onRegisterCanvas={handleRegisterCanvas}
-            />
-            {pages.length > 1 && (
-              <span className="inline-flex items-center rounded-full border border-border/50 bg-background/80 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-mono text-muted-foreground/60 select-none tabular-nums shadow-sm">
-                {i + 1} / {pages.length}
-              </span>
-            )}
-          </div>
-        ))}
+        <div key={currentPageIndex} className="flex flex-col items-center gap-2.5 animate-fade-in">
+          <PdfPage
+            page={page}
+            pageIndex={currentPageIndex}
+            zoom={state.zoom}
+            tool={state.currentTool}
+            color={state.color}
+            fontSize={state.fontSize}
+            strokeWidth={state.strokeWidth}
+            textBlocks={state.textBlocks}
+            drawings={state.drawings}
+            extractedTexts={state.extractedTexts}
+            activeTextBlockId={activeTextBlockId}
+            selectedExtractedTextId={state.selectedExtractedTextId}
+            onAddTextBlock={(block) => dispatch({ type: "ADD_TEXT_BLOCK", block })}
+            onUpdateTextBlock={(id, updates) => dispatch({ type: "UPDATE_TEXT_BLOCK", id, updates })}
+            onDeleteTextBlock={(id) => {
+              dispatch({ type: "DELETE_TEXT_BLOCK", id })
+              if (activeTextBlockId === id) setActiveTextBlockId(null)
+            }}
+            onSelectTextBlock={setActiveTextBlockId}
+            onAddDrawing={(drawing) => dispatch({ type: "ADD_DRAWING", drawing })}
+            onDeleteDrawing={(id) => dispatch({ type: "DELETE_DRAWING", id })}
+            onTextsExtracted={handleTextsExtracted}
+            onUpdateExtractedText={handleUpdateExtractedText}
+            onSelectExtractedText={handleSelectExtractedText}
+            onSetPageDimensions={handleSetPageDimensions}
+            onRegisterCanvas={handleRegisterCanvas}
+          />
+        </div>
       </div>
     </div>
   )
