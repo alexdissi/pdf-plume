@@ -146,6 +146,20 @@ export async function compilePdf(
         height: pdfHeight,
       })
     }
+
+    // Footer pagination (burned into the exported PDF)
+    const pageNumberText = `Page ${i + 1} / ${pages.length}`
+    const pageNumberFont = fonts.sans.regular
+    const pageNumberSize = 10
+    const textWidth = pageNumberFont.widthOfTextAtSize(pageNumberText, pageNumberSize)
+
+    page.drawText(pageNumberText, {
+      x: (pdfWidth - textWidth) / 2,
+      y: 14,
+      size: pageNumberSize,
+      font: pageNumberFont,
+      color: rgb(0.45, 0.45, 0.45),
+    })
   }
 
   return pdfDoc.save()
