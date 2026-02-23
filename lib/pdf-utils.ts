@@ -1,5 +1,11 @@
 import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib"
-import type { TextBlock, DrawingPath, ExtractedText, PageDimensions } from "./types"
+import type {
+  TextBlock,
+  DrawingPath,
+  ExtractedText,
+  PageDimensions,
+  PaginationSettings,
+} from "./types"
 
 function hexToRgb(hex: string) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -38,7 +44,8 @@ export async function compilePdf(
   drawings: DrawingPath[],
   extractedTexts: ExtractedText[],
   pageDimensions: Map<number, PageDimensions>,
-  drawingCanvases: Map<number, HTMLCanvasElement>
+  drawingCanvases: Map<number, HTMLCanvasElement>,
+  pagination: PaginationSettings
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(originalPdfData)
 
@@ -147,19 +154,26 @@ export async function compilePdf(
       })
     }
 
-    // Footer pagination (burned into the exported PDF)
-    const pageNumberText = `Page ${i + 1} / ${pages.length}`
-    const pageNumberFont = fonts.sans.regular
-    const pageNumberSize = 10
-    const textWidth = pageNumberFont.widthOfTextAtSize(pageNumberText, pageNumberSize)
+    if (pagination.enabled) {
+      const pageNumberText = `Page ${i + 1} / ${pages.length}`
+      const pageNumberFont = fonts.sans.regular
+      const pageNumberSize = pagination.fontSize
+      const textWidth = pageNumberFont.widthOfTextAtSize(pageNumberText, pageNumberSize)
+      const margin = 16
 
-    page.drawText(pageNumberText, {
-      x: (pdfWidth - textWidth) / 2,
-      y: 14,
-      size: pageNumberSize,
-      font: pageNumberFont,
-      color: rgb(0.45, 0.45, 0.45),
-    })
+      const x =
+        pagination.position === "bottom-right"
+          ? pdfWidth - textWidth - margin
+          : (pdfWidth - textWidth) / 2
+
+      page.drawText(pageNumberText, {
+        x,
+        y: margin - 2,
+        size: pageNumberSize,
+        font: pageNumberFont,
+        color: rgb(0.45, 0.45, 0.45),
+      })
+    }
   }
 
   return pdfDoc.save()

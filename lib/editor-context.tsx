@@ -17,6 +17,12 @@ const initialState: EditorState = {
   pageDimensions: new Map(),
   zoom: 1,
   selectedExtractedTextId: null,
+  pagination: {
+    enabled: true,
+    format: "page_x_of_y",
+    position: "bottom-center",
+    fontSize: 10,
+  },
 }
 
 function editorReducer(state: EditorState, action: EditorAction): EditorState {
@@ -89,6 +95,14 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, selectedExtractedTextId: action.id }
     case "SET_ZOOM":
       return { ...state, zoom: action.zoom }
+    case "SET_PAGINATION_ENABLED":
+      return { ...state, pagination: { ...state.pagination, enabled: action.enabled } }
+    case "SET_PAGINATION_FORMAT":
+      return { ...state, pagination: { ...state.pagination, format: action.format } }
+    case "SET_PAGINATION_POSITION":
+      return { ...state, pagination: { ...state.pagination, position: action.position } }
+    case "SET_PAGINATION_FONT_SIZE":
+      return { ...state, pagination: { ...state.pagination, fontSize: action.fontSize } }
     case "RESET":
       return initialState
     default:
