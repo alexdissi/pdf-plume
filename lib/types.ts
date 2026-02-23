@@ -56,6 +56,17 @@ export type PageDimensions = {
   scale: number
 }
 
+export type PaginationFormat = "page_x_of_y"
+
+export type PaginationPosition = "bottom-center" | "bottom-right"
+
+export type PaginationSettings = {
+  enabled: boolean
+  format: PaginationFormat
+  position: PaginationPosition
+  fontSize: number
+}
+
 export type EditorState = {
   pdfData: ArrayBuffer | null
   fileName: string
@@ -70,6 +81,7 @@ export type EditorState = {
   pageDimensions: Map<number, PageDimensions>
   zoom: number
   selectedExtractedTextId: string | null
+  pagination: PaginationSettings
 }
 
 export type EditorAction =
@@ -90,4 +102,8 @@ export type EditorAction =
   | { type: "UPDATE_EXTRACTED_TEXT_STYLE"; id: string; edits: Partial<ExtractedTextStyleEdits> }
   | { type: "SELECT_EXTRACTED_TEXT"; id: string | null }
   | { type: "SET_ZOOM"; zoom: number }
+  | { type: "SET_PAGINATION_ENABLED"; enabled: boolean }
+  | { type: "SET_PAGINATION_FORMAT"; format: PaginationFormat }
+  | { type: "SET_PAGINATION_POSITION"; position: PaginationPosition }
+  | { type: "SET_PAGINATION_FONT_SIZE"; fontSize: number }
   | { type: "RESET" }

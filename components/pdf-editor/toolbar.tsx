@@ -10,7 +10,12 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useEditor } from "@/lib/editor-context"
 import { compilePdf, downloadPdf } from "@/lib/pdf-utils"
-import type { Tool, ExtractedTextStyleEdits } from "@/lib/types"
+import type {
+  Tool,
+  ExtractedTextStyleEdits,
+  PaginationFormat,
+  PaginationPosition,
+} from "@/lib/types"
 
 const COLOR_PRESETS = [
   "#000000",
@@ -36,6 +41,15 @@ const TOOL_SHORTCUTS: Record<Tool, string> = {
   highlight: "H",
   eraser: "E",
 }
+
+const PAGINATION_FORMATS: { value: PaginationFormat; label: string }[] = [
+  { value: "page_x_of_y", label: "Page X / Y" },
+]
+
+const PAGINATION_POSITIONS: { value: PaginationPosition; label: string }[] = [
+  { value: "bottom-center", label: "Bas-centre" },
+  { value: "bottom-right", label: "Bas-droite" },
+]
 
 function Tip({ children, label, shortcut }: { children: ReactNode; label: string; shortcut?: string }) {
   return (
@@ -107,7 +121,8 @@ export function Toolbar() {
         state.drawings,
         state.extractedTexts,
         state.pageDimensions,
-        drawingCanvasRefs.current
+        drawingCanvasRefs.current,
+        state.pagination
       )
       downloadPdf(data, state.fileName)
     } finally {
@@ -315,6 +330,103 @@ export function Toolbar() {
                 <span className="w-8 text-right font-mono text-xs tabular-nums text-muted-foreground">
                   {state.strokeWidth}
                 </span>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <Tip label="Pagination export">
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 rounded-lg hover:bg-muted/60 gap-1.5 text-xs">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19h16" />
+                    <path d="M6 15h12" />
+                    <path d="M8 11h8" />
+                  </svg>
+                  Pagination
+                </Button>
+              </PopoverTrigger>
+            </Tip>
+            <PopoverContent className="w-64 p-3 rounded-xl" align="end">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium text-muted-foreground">Activer la pagination</p>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={state.pagination.enabled}
+                  onClick={() => dispatch({ type: "SET_PAGINATION_ENABLED", enabled: !state.pagination.enabled })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    state.pagination.enabled ? "bg-primary" : "bg-muted"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                      state.pagination.enabled ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Format</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {PAGINATION_FORMATS.map((format) => {
+                      const active = state.pagination.format === format.value
+                      return (
+                        <button
+                          key={format.value}
+                          onClick={() => dispatch({ type: "SET_PAGINATION_FORMAT", format: format.value })}
+                          className={`rounded-lg border px-2.5 py-1.5 text-left text-xs transition-colors ${
+                            active
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                          }`}
+                        >
+                          {format.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Position</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {PAGINATION_POSITIONS.map((position) => {
+                      const active = state.pagination.position === position.value
+                      return (
+                        <button
+                          key={position.value}
+                          onClick={() => dispatch({ type: "SET_PAGINATION_POSITION", position: position.value })}
+                          className={`rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
+                            active
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                          }`}
+                        >
+                          {position.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Taille de police</p>
+                  <div className="flex items-center gap-3">
+                    <Slider
+                      min={8}
+                      max={24}
+                      step={1}
+                      value={[state.pagination.fontSize]}
+                      onValueChange={([v]) => dispatch({ type: "SET_PAGINATION_FONT_SIZE", fontSize: v })}
+                    />
+                    <span className="w-8 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                      {state.pagination.fontSize}
+                    </span>
+                  </div>
+                </div>
               </div>
             </PopoverContent>
           </Popover>
